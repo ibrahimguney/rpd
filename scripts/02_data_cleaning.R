@@ -29,33 +29,60 @@ pisa <- read_sav(sav_files[1])
 pisa_tr <- pisa %>%
   filter(as.character(CNT) == "TUR")
 
-# Temel RPD modeli için doğrulanmış değişkenler
+# Çalışmanın doğrulanmış temel, psikososyal ve örnekleme değişkenleri
 core_vars <- c(
   "CNT", "CNTSCHID", "CNTSTUID",
   "BELONG", "BULLIED", "TEACHSUP", "ESCS",
+  "FEELSAFE", "RELATST", "SKIPPING", "SCHRISK",
   "ST004D01T", "AGE", "GRADE", "W_FSTUWT"
 )
 
-# Tekrar ağırlıkları (varsa)
+# PISA öğrenci düzeyi 80 tekrar ağırlığı
 replicate_weights <- paste0("W_FSTURWT", 1:80)
-selected_vars <- intersect(c(core_vars, replicate_weights), names(pisa_tr))
 
-missing_core <- setdiff(core_vars, names(pisa_tr))
-if (length(missing_core) > 0) {
-  warning("Veri dosyasında bulunamayan temel değişkenler: ", paste(missing_core, collapse = ", "))
+# Gerekli değişkenlerin tamamının mevcut olup olmadığını kontrol et.
+required_vars <- c(core_vars, replicate_weights)
+missing_required <- setdiff(required_vars, names(pisa_tr))
+if (length(missing_required) > 0) {
+  stop(
+    "PISA veri dosyasında çalışma için gerekli değişkenler eksik: ",
+    paste(missing_required, collapse = ", ")
+  )
 }
 
+# Yalnızca araştırmada kullanılacak değişkenleri tut.
 rpd_tr <- pisa_tr %>%
-  select(all_of(selected_vars))
+  select(all_of(required_vars))
 
-# haven labelled değişkenlerini analiz öncesinde koruyarak RDS olarak kaydet.
+# Ham PISA labelled yapısını koruyarak RDS olarak kaydet.
 saveRDS(rpd_tr, file.path(processed_dir, "pisa2022_turkey_rpd.rds"))
 
 message("Türkiye örneklemi: ", nrow(rpd_tr), " öğrenci")
 message("Seçilen değişken sayısı: ", ncol(rpd_tr))
+message("Tekrar ağırlığı sayısı: ", length(replicate_weights))
 message("Kaydedildi: data/processed/pisa2022_turkey_rpd.rds")
 
-# Temel değişkenlerde eksik gözlem oranları
-analysis_vars <- intersect(c("BELONG", "BULLIED", "TEACHSUP", "ESCS", "ST004D01T", "AGE", "GRADE"), names(rpd_tr))
-missing_summary <- sapply(rpd_tr[analysis_vars], function(x) mean(is.na(x)))
-print(round(missing_summary, 3))
+# Model değişkenlerinde eksik gözlem özeti
+analysis_vars <- c(
+  "BELONG", "BULLIED", "TEACHSUP", "ESCS",
+  "FEELSAFE", "RELATST", "SKIPPING", "SCHRISK",
+  "ST004D01T", "AGE", "GRADE", "W_FSTUWT"
+)
+
+missing_summary <- data.frame(
+  Variable = analysis_vars,
+  Valid = sapply(rpd_tr[analysis_vars], function(x) sum(!is.na(x))),
+  Missing = sapply(rpd_tr[analysis_vars], function(x) sum(is.na(x))),
+  Missing_pct = round(sapply(rpd_tr[analysis_vars], function(x) mean(is.na(x)) * 100), 2),
+  row.names = NULL
+)
+
+print(missing_summary)
+
+# Tekrar ağırlıklarında eksiklik kontrolü
+rep_missing <- sapply(rpd_tr[replicate_weights], function(x) sum(is.na(x)))
+if (any(rep_missing > 0)) {
+  warning("Bazı tekrar ağırlıklarında eksik gözlem bulunmaktadır.")
+} else {
+  message("80 tekrar ağırlığının tamamında eksik değer sayısı 0.")
+}

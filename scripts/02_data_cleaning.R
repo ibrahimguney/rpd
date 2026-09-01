@@ -14,15 +14,22 @@ raw_dir <- file.path("data", "raw", "pisa2022_student")
 processed_dir <- file.path("data", "processed")
 dir.create(processed_dir, recursive = TRUE, showWarnings = FALSE)
 
-# Arşiv açıldıktan sonra .sav dosyasını otomatik bul.
-sav_files <- list.files(raw_dir, pattern = "\\.sav$", full.names = TRUE, recursive = TRUE)
+# Arşiv açıldıktan sonra .sav/.SAV dosyasını otomatik bul.
+sav_files <- list.files(
+  raw_dir,
+  pattern = "\\.sav$",
+  full.names = TRUE,
+  recursive = TRUE,
+  ignore.case = TRUE
+)
 if (length(sav_files) == 0) {
-  stop("SPSS .sav dosyası bulunamadı. Önce scripts/01_data_download.R adımını tamamlayın.")
+  stop("SPSS .sav/.SAV dosyası bulunamadı. Önce scripts/01_data_download.R adımını tamamlayın.")
 }
 if (length(sav_files) > 1) {
-  message("Birden fazla .sav bulundu; ilk dosya kullanılacak: ", sav_files[1])
+  message("Birden fazla .sav/.SAV bulundu; ilk dosya kullanılacak: ", sav_files[1])
 }
 
+message("Kullanılan SPSS dosyası: ", sav_files[1])
 pisa <- read_sav(sav_files[1])
 
 # Türkiye örneklemi

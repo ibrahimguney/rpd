@@ -1,0 +1,27 @@
+# R / RStudio
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# Raw and processed data
+# Keep folder placeholders, but do not commit downloaded datasets.
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Generated outputs
+outputs/tables/*
+!outputs/tables/.gitkeep
+outputs/figures/*
+!outputs/figures/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Temporary files
+*.tmp
+~$*
